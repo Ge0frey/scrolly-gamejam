@@ -345,8 +345,8 @@ const GameSandbox: FC = () => {
         // Create explosion particles with physics
         const particleColors =
           target.type === 'golden'
-            ? ['#fcd34d', '#fde68a', '#fef3c7', '#fbbf24']
-            : ['#99f6e4', '#5eead4', '#2dd4bf', '#14b8a6'];
+            ? ['#f59e0b', '#fbbf24', '#fcd34d', '#fde047']
+            : ['#06b6d4', '#14b8a6', '#2dd4bf', '#5eead4'];
 
         const particleTimestamp = Date.now();
         const particleRandom = Math.random().toString(36).substring(2, 9);
@@ -477,11 +477,11 @@ const GameSandbox: FC = () => {
   const getLetterStyle = (type: 'normal' | 'golden' | 'bomb') => {
     switch (type) {
       case 'golden':
-        return 'text-amber-300 bg-amber-400/20 border-amber-400/40';
+        return 'text-amber-100 bg-amber-500/50 border-amber-300/70 shadow-lg shadow-amber-500/40';
       case 'bomb':
-        return 'text-rose-400 bg-rose-500/20 border-rose-400/40';
+        return 'text-rose-100 bg-rose-600/50 border-rose-400/70 shadow-lg shadow-rose-500/40';
       default:
-        return 'text-teal-200 bg-teal-400/15 border-teal-400/30';
+        return 'text-teal-100 bg-teal-500/40 border-teal-300/60 shadow-md shadow-teal-500/30';
     }
   };
 
@@ -492,7 +492,7 @@ const GameSandbox: FC = () => {
       className={`relative w-full h-full flex flex-col overflow-hidden select-none`}
       style={{
         transform: screenShake ? `translate(${Math.random() * 6 - 3}px, ${Math.random() * 6 - 3}px) rotate(${Math.random() * 2 - 1}deg)` : 'none',
-        background: 'linear-gradient(180deg, #083344 0%, #0f4c5c 30%, #0d9488 70%, #115e59 100%)',
+        background: 'linear-gradient(180deg, #042633 0%, #0a3342 30%, #0c8074 70%, #0d4f4a 100%)',
         transition: screenShake ? 'none' : 'transform 0.1s ease-out',
       }}
     >
@@ -502,9 +502,9 @@ const GameSandbox: FC = () => {
           className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-100"
           style={{
             backgroundColor: 
-              screenFlash === 'success' ? 'rgba(45, 212, 191, 0.2)' :
-              screenFlash === 'golden' ? 'rgba(251, 191, 36, 0.3)' :
-              screenFlash === 'fail' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
+              screenFlash === 'success' ? 'rgba(20, 184, 166, 0.35)' :
+              screenFlash === 'golden' ? 'rgba(245, 158, 11, 0.45)' :
+              screenFlash === 'fail' ? 'rgba(220, 38, 38, 0.4)' : 'transparent',
           }}
         />
       )}
@@ -514,7 +514,7 @@ const GameSandbox: FC = () => {
         {[0, 1, 2].map((i) => (
           <div
             key={`light-ray-${i}`}
-            className="absolute top-0 opacity-[0.07]"
+            className="absolute top-0 opacity-[0.12]"
             style={{
               left: `${20 + i * 25}%`,
               width: '60px',
@@ -531,13 +531,14 @@ const GameSandbox: FC = () => {
         {staticBubbles.map((bubble) => (
           <div
             key={bubble.id}
-            className="absolute rounded-full bg-white/20 border border-white/30"
+            className="absolute rounded-full bg-white/30 border border-white/50"
             style={{
               left: `${bubble.x}%`,
               width: `${bubble.size}px`,
               height: `${bubble.size}px`,
               animation: `rise ${bubble.speed}s ease-in-out infinite`,
               animationDelay: `${bubble.delay}s`,
+              boxShadow: '0 0 8px rgba(255,255,255,0.4)',
             }}
           />
         ))}
@@ -547,8 +548,8 @@ const GameSandbox: FC = () => {
       <style>{`
         @keyframes rise {
           0% { bottom: -20px; opacity: 0; transform: translateX(0); }
-          10% { opacity: 0.6; }
-          90% { opacity: 0.4; }
+          10% { opacity: 0.9; }
+          90% { opacity: 0.7; }
           100% { bottom: 100%; opacity: 0; transform: translateX(10px); }
         }
         @keyframes sway {
@@ -561,16 +562,16 @@ const GameSandbox: FC = () => {
       <div className="flex justify-between items-start px-3 pt-2 pb-1 relative z-10">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-white/90">
+            <span className="text-lg font-bold text-white drop-shadow-lg">
               {score}
             </span>
             {combo >= 3 && (
-              <span className="text-[10px] font-bold text-amber-300 animate-pulse px-1.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/30">
+              <span className="text-[10px] font-bold text-amber-100 animate-pulse px-1.5 py-0.5 rounded-full bg-amber-500/40 border border-amber-300/60 shadow-lg">
                 {comboMultiplier}x
               </span>
             )}
           </div>
-          <span className="text-[9px] text-teal-300/50">Best: {highScore}</span>
+          <span className="text-[9px] text-teal-200/80 drop-shadow">Best: {highScore}</span>
         </div>
 
         <div className="flex items-center gap-1">
@@ -579,8 +580,8 @@ const GameSandbox: FC = () => {
               key={`life-${i}`}
               className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
                 i < lives 
-                  ? 'bg-rose-400 border border-rose-300/50' 
-                  : 'bg-teal-800/40 border border-teal-700/30'
+                  ? 'bg-rose-500 border border-rose-300/70 shadow-lg shadow-rose-500/50' 
+                  : 'bg-teal-900/60 border border-teal-800/50'
               }`}
             />
           ))}
@@ -590,10 +591,10 @@ const GameSandbox: FC = () => {
       {/* Power-up indicator */}
       {powerUp !== 'none' && (
         <div
-          className={`absolute top-11 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-medium z-20 border ${
+          className={`absolute top-11 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-medium z-20 border shadow-lg ${
             powerUp === 'slow' 
-              ? 'bg-sky-500/20 text-sky-200 border-sky-400/30' 
-              : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
+              ? 'bg-sky-600/50 text-sky-100 border-sky-300/60 shadow-sky-500/50' 
+              : 'bg-emerald-600/50 text-emerald-100 border-emerald-300/60 shadow-emerald-500/50'
           }`}
         >
           {powerUp === 'slow' ? '🐢 Slow Current' : '🐚 Shell Shield'}
@@ -692,8 +693,8 @@ const GameSandbox: FC = () => {
           <div 
             className="absolute inset-0"
             style={{
-              background: 'linear-gradient(to top, #92702a 0%, #a17f3a 40%, transparent 100%)',
-              opacity: 0.6,
+              background: 'linear-gradient(to top, #7a5c1f 0%, #96721c 40%, transparent 100%)',
+              opacity: 0.8,
             }}
           />
           
@@ -712,10 +713,11 @@ const GameSandbox: FC = () => {
               <svg width="20" height={35 + (i % 3) * 10} viewBox="0 0 20 50" fill="none">
                 <path
                   d={`M10 50 Q${5 + (i % 2) * 10} 35 10 25 Q${15 - (i % 2) * 10} 15 10 0`}
-                  stroke={i % 2 === 0 ? '#166534' : '#15803d'}
-                  strokeWidth="4"
+                  stroke={i % 2 === 0 ? '#14532d' : '#15803d'}
+                  strokeWidth="5"
                   strokeLinecap="round"
                   fill="none"
+                  opacity="0.9"
                 />
               </svg>
             </div>
@@ -744,10 +746,10 @@ const GameSandbox: FC = () => {
 
       {/* Virtual keyboard - always visible */}
       {gameState === 'playing' && (
-        <div className="bg-teal-900/60 backdrop-blur-sm px-1 pb-4 pt-3 relative z-10 rounded-t-xl">
-          <div className="flex flex-col gap-1 items-center">
+        <div className="bg-teal-900/80 backdrop-blur-sm px-1 pb-4 pt-3 relative z-10 rounded-t-xl shadow-2xl">
+          <div className="flex flex-col gap-1.5 items-center">
             {keyboardRows.map((row, rowIndex) => (
-              <div key={`kb-row-${rowIndex}`} className="flex gap-0.5 justify-center">
+              <div key={`kb-row-${rowIndex}`} className="flex gap-1 justify-center">
                 {row.map((letter) => (
                   <button
                     key={`kb-${letter}`}
@@ -756,9 +758,9 @@ const GameSandbox: FC = () => {
                       handleLetterInput(letter);
                     }}
                     onClick={() => handleLetterInput(letter)}
-                    className="w-8 h-9 rounded-lg bg-teal-700/50 border border-teal-500/30 text-teal-100 font-bold text-sm
-                      active:bg-teal-500/60 active:scale-95 transition-all duration-75
-                      hover:bg-teal-600/50 select-none touch-manipulation"
+                    className="w-8 h-9 rounded-lg bg-teal-600/60 border border-teal-300/50 text-teal-50 font-bold text-sm shadow-md
+                      active:bg-teal-400/80 active:scale-95 active:shadow-lg transition-all duration-75
+                      hover:bg-teal-500/70 hover:border-teal-200/60 select-none touch-manipulation"
                     style={{ WebkitTapHighlightColor: 'transparent' }}
                   >
                     {letter}
@@ -772,45 +774,45 @@ const GameSandbox: FC = () => {
 
       {/* Start Screen */}
       {gameState === 'start' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-teal-950/90 backdrop-blur-sm z-50">
-          <div className="text-3xl mb-1">🐠</div>
-          <div className="text-2xl font-black text-teal-100 mb-1 tracking-tight">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-teal-950/95 backdrop-blur-sm z-50">
+          <div className="text-3xl mb-1 drop-shadow-lg">🐠</div>
+          <div className="text-2xl font-black text-white mb-1 tracking-tight drop-shadow-lg">
             DEEP TYPE
           </div>
-          <p className="text-[11px] text-teal-300/70 mb-4">
+          <p className="text-[11px] text-teal-200 mb-4 drop-shadow">
             Tap or type letters before they hit the ocean floor!
           </p>
 
-          <div className="text-[10px] text-teal-200/80 mb-5 space-y-2 text-center px-6">
-            <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
-              <span className="w-7 h-7 rounded-lg bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-100 font-bold">A</span>
+          <div className="text-[10px] text-teal-100 mb-5 space-y-2 text-center px-6">
+            <div className="flex items-center justify-center gap-3 bg-teal-800/50 rounded-lg px-4 py-2 shadow-lg border border-teal-600/40">
+              <span className="w-7 h-7 rounded-lg bg-teal-500/40 border border-teal-300/60 flex items-center justify-center text-teal-50 font-bold shadow-md">A</span>
               <span className="text-teal-100">Normal = 1pt</span>
             </div>
-            <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
-              <span className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-200 font-bold animate-pulse">G</span>
-              <span className="text-amber-200">Golden = 3pts</span>
+            <div className="flex items-center justify-center gap-3 bg-amber-900/40 rounded-lg px-4 py-2 shadow-lg border border-amber-600/40">
+              <span className="w-7 h-7 rounded-lg bg-amber-500/50 border border-amber-300/70 flex items-center justify-center text-amber-50 font-bold animate-pulse shadow-lg">G</span>
+              <span className="text-amber-100">Golden = 3pts</span>
             </div>
-            <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
-              <span className="text-base">🦔</span>
-              <span className="text-rose-200">Sea Urchin = Game Over!</span>
+            <div className="flex items-center justify-center gap-3 bg-rose-900/40 rounded-lg px-4 py-2 shadow-lg border border-rose-600/40">
+              <span className="text-base drop-shadow-lg">🦔</span>
+              <span className="text-rose-100">Sea Urchin = Game Over!</span>
             </div>
           </div>
 
-          <div className="text-xs text-teal-300 mb-5 text-center">
+          <div className="text-xs text-teal-100 mb-5 text-center drop-shadow">
           🌊 Build combos for multipliers!<br/>
             🐙 Current gets stronger as you dive deeper
           </div>
 
           <button
             onClick={startGame}
-            className="px-8 py-3 bg-teal-600 hover:bg-teal-500 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border border-teal-400/30"
+            className="px-8 py-3 bg-teal-600 hover:bg-teal-500 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border border-teal-300/50 shadow-xl shadow-teal-600/50"
           >
             🫧 DIVE IN
           </button>
 
           {highScore > 0 && (
-            <p className="text-[10px]  mt-4">
-              🏆 High Score: <span className="text-amber-300">{highScore}</span>
+            <p className="text-[10px] text-teal-200 mt-4 drop-shadow">
+              🏆 High Score: <span className="text-amber-300 font-bold">{highScore}</span>
             </p>
           )}
         </div>
@@ -819,36 +821,36 @@ const GameSandbox: FC = () => {
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-teal-950/95 backdrop-blur-sm z-50">
-          <div className="text-3xl mb-2">🌊</div>
-          <div className="text-xl font-black text-rose-300 mb-3">
+          <div className="text-3xl mb-2 drop-shadow-lg">🌊</div>
+          <div className="text-xl font-black text-rose-400 mb-3 drop-shadow-lg">
             SURFACED!
           </div>
 
-          <div className="text-4xl font-black text-white mb-1">
+          <div className="text-4xl font-black text-white mb-1 drop-shadow-lg">
             {score}
           </div>
-          <p className="text-[11px] text-teal-300/60 mb-3">POINTS</p>
+          <p className="text-[11px] text-teal-200 mb-3 drop-shadow">POINTS</p>
 
           {score >= highScore && score > 0 && (
-            <div className="text-xs font-bold text-amber-300 mb-4 px-4 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/20 animate-pulse">
+            <div className="text-xs font-bold text-amber-100 mb-4 px-4 py-1.5 rounded-full bg-amber-500/30 border border-amber-300/50 animate-pulse shadow-lg">
               🐠 NEW RECORD!
             </div>
           )}
 
           {score < highScore && (
-            <p className="text-[10px] text-teal-400/60 mb-4">
-              Best: <span className="text-amber-300">{highScore}</span>
+            <p className="text-[10px] text-teal-200 mb-4 drop-shadow">
+              Best: <span className="text-amber-300 font-bold">{highScore}</span>
             </p>
           )}
 
           {/* Stats */}
-          <div className="text-[10px] text-teal-300/50 mb-5 text-center">
+          <div className="text-[10px] text-teal-200 mb-5 text-center drop-shadow">
             Maximum depth: {difficulty + 1}
           </div>
 
           <button
             onClick={startGame}
-            className="px-8 py-3 bg-teal-600 hover:bg-teal-500 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border border-teal-400/30"
+            className="px-8 py-3 bg-teal-600 hover:bg-teal-500 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border border-teal-300/50 shadow-xl shadow-teal-600/50"
           >
             🫧 DIVE AGAIN
           </button>
@@ -859,7 +861,7 @@ const GameSandbox: FC = () => {
       {gameState === 'playing' && (
         <button
           onClick={startGame}
-          className="absolute top-1.5 right-2 text-teal-300/40 hover:text-teal-100 transition-colors text-sm"
+          className="absolute top-1.5 right-2 text-teal-200/70 hover:text-teal-50 transition-colors text-sm drop-shadow"
           title="Restart"
         >
           ↺
