@@ -6,17 +6,17 @@ import pkg from '../../../package.json';
 
 export const HomeView: FC = () => {
   return (
-    <div className="flex min-h-screen flex-col bg-black text-white">
+    <div className="flex min-h-screen flex-col bg-teal-950 text-white">
       {/* HEADER – fake Scrolly feed tabs */}
-      <header className="flex items-center justify-center border-b border-white/10 py-3">
-        <div className="flex items-center gap-2 rounded-full bg-white/5 px-2 py-1 text-[11px]">
-          <button className="rounded-full bg-slate-900 px-3 py-1 font-semibold text-white">
+      <header className="flex items-center justify-center border-b border-teal-800/30 py-3 bg-teal-900/40">
+        <div className="flex items-center gap-2 rounded-full bg-teal-800/30 px-2 py-1 text-[11px]">
+          <button className="rounded-full bg-teal-700/60 px-3 py-1 font-semibold text-teal-100">
             Feed
           </button>
-          <button className="rounded-full px-3 py-1 text-slate-400">
+          <button className="rounded-full px-3 py-1 text-teal-400/60">
             Casino
           </button>
-          <button className="rounded-full px-3 py-1 text-slate-400">
+          <button className="rounded-full px-3 py-1 text-teal-400/60">
             Kids
           </button>
         </div>
@@ -24,25 +24,25 @@ export const HomeView: FC = () => {
 
       {/* MAIN – central game area (phone frame) */}
       <main className="flex flex-1 items-center justify-center px-4 py-3">
-        <div className="relative aspect-[9/16] w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 shadow-[0_0_40px_rgba(56,189,248,0.35)]">
-          {/* Fake “feed card” top bar inside the phone */}
-          <div className="flex items-center justify-between px-3 py-2 text-[10px] text-slate-400">
-            <span className="rounded-full bg-white/5 px-2 py-1 text-[9px] uppercase tracking-wide">
-              Scrolly Game
+        <div className="relative aspect-[9/16] w-full max-w-sm overflow-hidden rounded-3xl border-2 border-teal-600/20 shadow-lg">
+          {/* Fake "feed card" top bar inside the phone */}
+          <div className="flex items-center justify-between px-3 py-2 text-[10px] text-teal-300/70 bg-teal-900/60 backdrop-blur-sm relative z-10">
+            <span className="rounded-full bg-teal-700/40 px-2 py-1 text-[9px] uppercase tracking-wide text-teal-200">
+              🐠 Scrolly Game
             </span>
-            <span className="text-[9px] opacity-70">#NoCodeJam</span>
+            <span className="text-[9px] text-teal-400/50">#NoCodeJam</span>
           </div>
 
           {/* The game lives INSIDE this phone frame */}
-          <div className="flex h-[calc(100%-26px)] flex-col items-center justify-start px-3 pb-3 pt-1">
+          <div className="flex h-[calc(100%-26px)] flex-col items-center justify-start">
             <GameSandbox />
           </div>
         </div>
       </main>
 
       {/* FOOTER – tiny version text */}
-      <footer className="flex h-5 items-center justify-center border-t border-white/10 px-2 text-[9px] text-slate-500">
-        <span>Scrolly · v{pkg.version}</span>
+      <footer className="flex h-5 items-center justify-center border-t border-teal-800/30 px-2 text-[9px] text-teal-500/60">
+        <span>🫧 Scrolly · v{pkg.version}</span>
       </footer>
     </div>
   );
@@ -67,6 +67,33 @@ interface Particle {
   y: number;
   color: string;
 }
+
+interface Bubble {
+  id: string;
+  x: number;
+  size: number;
+  speed: number;
+  delay: number;
+}
+
+// Generate static bubbles once (using useMemo pattern outside component to avoid re-renders)
+const staticBubbles: Bubble[] = Array.from({ length: 12 }, (_, i) => ({
+  id: `bubble-static-${i}-${Math.random().toString(36).substring(2, 9)}`,
+  x: 5 + (i * 8) % 90,
+  size: 4 + (i % 4) * 3,
+  speed: 3 + (i % 3) * 2,
+  delay: i * 0.8,
+}));
+
+// Seaweed positions with unique keys
+const seaweedData = [
+  { id: 'sw-1', pos: 8 },
+  { id: 'sw-2', pos: 22 },
+  { id: 'sw-3', pos: 38 },
+  { id: 'sw-4', pos: 55 },
+  { id: 'sw-5', pos: 72 },
+  { id: 'sw-6', pos: 88 },
+];
 
 const GameSandbox: FC = () => {
   // Game states
@@ -223,14 +250,16 @@ const GameSandbox: FC = () => {
         setScore((s) => s + basePoints * comboMultiplier);
         setCombo((c) => c + 1);
 
-        // Create explosion particles
+        // Create bubble pop particles
         const particleColors =
           target.type === 'golden'
-            ? ['#fbbf24', '#f59e0b', '#fcd34d']
-            : ['#38bdf8', '#0ea5e9', '#7dd3fc'];
+            ? ['#fcd34d', '#fde68a', '#fef3c7']
+            : ['#99f6e4', '#5eead4', '#2dd4bf'];
 
+        const particleTimestamp = Date.now();
+        const particleRandom = Math.random().toString(36).substring(2, 9);
         const newParticles: Particle[] = Array.from({ length: 6 }, (_, i) => ({
-          id: `${Date.now()}-p${i}`,
+          id: `particle-${particleTimestamp}-${particleRandom}-${i}`,
           x: target.x + (Math.random() - 0.5) * 10,
           y: target.y + (Math.random() - 0.5) * 10,
           color: particleColors[Math.floor(Math.random() * particleColors.length)],
@@ -299,20 +328,11 @@ const GameSandbox: FC = () => {
   const getLetterStyle = (type: 'normal' | 'golden' | 'bomb') => {
     switch (type) {
       case 'golden':
-        return {
-          className: 'text-yellow-300',
-          shadow: '0 0 12px #fbbf24, 0 0 24px #f59e0b',
-        };
+        return 'text-amber-300 bg-amber-400/20 border-amber-400/40';
       case 'bomb':
-        return {
-          className: 'text-red-400',
-          shadow: '0 0 12px #ef4444, 0 0 20px #dc2626',
-        };
+        return 'text-rose-400 bg-rose-500/20 border-rose-400/40';
       default:
-        return {
-          className: 'text-cyan-300',
-          shadow: '0 0 8px #38bdf8',
-        };
+        return 'text-teal-200 bg-teal-400/15 border-teal-400/30';
     }
   };
 
@@ -320,46 +340,86 @@ const GameSandbox: FC = () => {
 
   return (
     <div
-      className={`relative w-full h-full flex flex-col overflow-hidden select-none ${
-        screenShake ? 'animate-pulse' : ''
-      }`}
+      className={`relative w-full h-full flex flex-col overflow-hidden select-none`}
       style={{
         transform: screenShake ? `translate(${Math.random() * 4 - 2}px, ${Math.random() * 4 - 2}px)` : 'none',
-        background: 'linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(30,41,59,0.8) 50%, rgba(15,23,42,0.95) 100%)',
+        background: 'linear-gradient(180deg, #083344 0%, #0f4c5c 30%, #0d9488 70%, #115e59 100%)',
       }}
     >
+      {/* Underwater ambient - light rays from surface */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={`light-ray-${i}`}
+            className="absolute top-0 opacity-[0.07]"
+            style={{
+              left: `${20 + i * 25}%`,
+              width: '60px',
+              height: '100%',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 60%)',
+              transform: `skewX(${-15 + i * 10}deg)`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Rising bubbles animation */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {staticBubbles.map((bubble) => (
+          <div
+            key={bubble.id}
+            className="absolute rounded-full bg-white/20 border border-white/30"
+            style={{
+              left: `${bubble.x}%`,
+              width: `${bubble.size}px`,
+              height: `${bubble.size}px`,
+              animation: `rise ${bubble.speed}s ease-in-out infinite`,
+              animationDelay: `${bubble.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* CSS Animation for bubbles */}
+      <style>{`
+        @keyframes rise {
+          0% { bottom: -20px; opacity: 0; transform: translateX(0); }
+          10% { opacity: 0.6; }
+          90% { opacity: 0.4; }
+          100% { bottom: 100%; opacity: 0; transform: translateX(10px); }
+        }
+        @keyframes sway {
+          0%, 100% { transform: rotate(-5deg); }
+          50% { transform: rotate(5deg); }
+        }
+      `}</style>
+
       {/* HUD - Score, Combo, Lives */}
-      <div className="flex justify-between items-start px-2 pt-1 pb-0.5">
+      <div className="flex justify-between items-start px-3 pt-2 pb-1 relative z-10">
         <div className="flex flex-col">
-          <div className="flex items-center gap-1.5">
-            <span
-              className="text-sm font-bold text-cyan-300"
-              style={{ textShadow: '0 0 10px #38bdf8' }}
-            >
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-white/90">
               {score}
             </span>
             {combo >= 3 && (
-              <span
-                className="text-[10px] font-bold text-yellow-400 animate-pulse px-1 py-0.5 rounded bg-yellow-400/10"
-              >
+              <span className="text-[10px] font-bold text-amber-300 animate-pulse px-1.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/30">
                 {comboMultiplier}x
               </span>
             )}
           </div>
-          <span className="text-[8px] text-slate-500">Best: {highScore}</span>
+          <span className="text-[9px] text-teal-300/50">Best: {highScore}</span>
         </div>
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <span
-              key={i}
-              className={`text-xs transition-all duration-200 ${
-                i < lives ? 'opacity-100 scale-100' : 'opacity-20 scale-75'
+            <div
+              key={`life-${i}`}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
+                i < lives 
+                  ? 'bg-rose-400 border border-rose-300/50' 
+                  : 'bg-teal-800/40 border border-teal-700/30'
               }`}
-              style={{ filter: i < lives ? 'drop-shadow(0 0 4px #ef4444)' : 'none' }}
-            >
-              ❤️
-            </span>
+            />
           ))}
         </div>
       </div>
@@ -367,42 +427,26 @@ const GameSandbox: FC = () => {
       {/* Power-up indicator */}
       {powerUp !== 'none' && (
         <div
-          className="absolute top-9 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-medium animate-pulse z-20"
-          style={{
-            background: powerUp === 'slow' ? 'rgba(168,85,247,0.2)' : 'rgba(34,197,94,0.2)',
-            color: powerUp === 'slow' ? '#c084fc' : '#4ade80',
-            border: `1px solid ${powerUp === 'slow' ? 'rgba(168,85,247,0.3)' : 'rgba(34,197,94,0.3)'}`,
-          }}
+          className={`absolute top-11 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-medium z-20 border ${
+            powerUp === 'slow' 
+              ? 'bg-sky-500/20 text-sky-200 border-sky-400/30' 
+              : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30'
+          }`}
         >
-          {powerUp === 'slow' ? '🐌 SLOW TIME' : '🛡️ SHIELD'}
+          {powerUp === 'slow' ? '🐢 Slow Current' : '🐚 Shell Shield'}
         </div>
       )}
 
-      {/* Difficulty indicator */}
+      {/* Depth indicator */}
       {gameState === 'playing' && difficulty > 0 && (
-        <div className="absolute top-1 left-1/2 -translate-x-1/2 text-[8px] text-slate-600">
-          Lv.{difficulty + 1}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[9px] text-teal-400/50 font-medium">
+          Depth {difficulty + 1}
         </div>
       )}
 
       {/* Game Area */}
       <div className="relative flex-1 overflow-hidden">
-        {/* Starfield background effect */}
-        <div className="absolute inset-0 opacity-30">
-          {Array.from({ length: 15 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-0.5 h-0.5 bg-white rounded-full"
-              style={{
-                left: `${(i * 17 + 5) % 100}%`,
-                top: `${(i * 23 + 10) % 100}%`,
-                opacity: 0.3 + Math.random() * 0.5,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Particles */}
+        {/* Particles (bubble pops) */}
         {particles.map((p) => (
           <div
             key={p.id}
@@ -411,60 +455,82 @@ const GameSandbox: FC = () => {
               left: `${p.x}%`,
               top: `${p.y}%`,
               backgroundColor: p.color,
-              boxShadow: `0 0 8px ${p.color}`,
+              opacity: 0.7,
             }}
           />
         ))}
 
-        {/* Falling letters */}
+        {/* Falling letters (like sinking objects) */}
         {fallingLetters.map((letter) => {
           const style = getLetterStyle(letter.type);
           return (
             <div
               key={letter.id}
-              className={`absolute text-xl font-bold transition-none ${style.className} ${
+              className={`absolute flex items-center justify-center w-9 h-9 rounded-xl font-bold text-lg border transition-none ${style} ${
                 letter.type === 'golden' ? 'animate-pulse' : ''
               } ${letter.type === 'bomb' ? 'animate-bounce' : ''}`}
               style={{
                 left: `${letter.x}%`,
                 top: `${letter.y}%`,
                 transform: 'translate(-50%, -50%)',
-                textShadow: style.shadow,
-                fontFamily: 'monospace',
+                fontFamily: "'SF Mono', 'Fira Code', monospace",
               }}
             >
-              {letter.type === 'bomb' ? '💣' : letter.letter}
+              {letter.type === 'bomb' ? '🦔' : letter.letter}
             </div>
           );
         })}
 
-        {/* Danger zone gradient */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[15%] pointer-events-none"
-          style={{
-            background: 'linear-gradient(to top, rgba(239,68,68,0.15) 0%, transparent 100%)',
-          }}
-        />
+        {/* Ocean floor - sandy bottom with seaweed */}
+        <div className="absolute bottom-0 left-0 right-0 h-[18%] pointer-events-none">
+          {/* Sandy gradient */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to top, #92702a 0%, #a17f3a 40%, transparent 100%)',
+              opacity: 0.6,
+            }}
+          />
+          
+          {/* Seaweed */}
+          {seaweedData.map((sw, i) => (
+            <div
+              key={sw.id}
+              className="absolute bottom-0"
+              style={{
+                left: `${sw.pos}%`,
+                transformOrigin: 'bottom center',
+                animation: `sway ${2 + i * 0.3}s ease-in-out infinite`,
+                animationDelay: `${i * 0.2}s`,
+              }}
+            >
+              <svg width="20" height={35 + (i % 3) * 10} viewBox="0 0 20 50" fill="none">
+                <path
+                  d={`M10 50 Q${5 + (i % 2) * 10} 35 10 25 Q${15 - (i % 2) * 10} 15 10 0`}
+                  stroke={i % 2 === 0 ? '#166534' : '#15803d'}
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </svg>
+            </div>
+          ))}
 
-        {/* Danger zone line */}
-        <div
-          className="absolute bottom-[5%] left-[5%] right-[5%] h-px"
-          style={{
-            background: 'linear-gradient(90deg, transparent, rgba(239,68,68,0.5), transparent)',
-          }}
-        />
+          {/* Small shells and pebbles */}
+          <div className="absolute bottom-1 left-[15%] text-[10px]">🐚</div>
+          <div className="absolute bottom-2 left-[45%] text-[8px]">⚪</div>
+          <div className="absolute bottom-1 left-[75%] text-[10px]">🪨</div>
+        </div>
       </div>
 
       {/* Input feedback */}
       {lastTyped && (
         <div
-          className={`absolute bottom-16 left-1/2 -translate-x-1/2 text-3xl font-black transition-all duration-100 z-30 ${
-            lastTyped.correct ? 'scale-125' : 'scale-90'
+          className={`absolute bottom-20 left-1/2 -translate-x-1/2 text-3xl font-black transition-all duration-100 z-30 ${
+            lastTyped.correct ? 'scale-125 text-emerald-300' : 'scale-90 text-rose-300'
           }`}
           style={{
-            color: lastTyped.correct ? '#4ade80' : '#f87171',
-            textShadow: lastTyped.correct ? '0 0 20px #4ade80' : '0 0 15px #ef4444',
-            fontFamily: 'monospace',
+            fontFamily: "'SF Mono', 'Fira Code', monospace",
           }}
         >
           {lastTyped.letter}
@@ -473,55 +539,50 @@ const GameSandbox: FC = () => {
 
       {/* Keyboard hint */}
       {gameState === 'playing' && (
-        <div className="text-center text-[9px] text-slate-500 py-1 bg-slate-900/50">
-          ⌨️ Type the letters!
+        <div className="text-center text-[10px] text-teal-200/60 py-1.5 bg-teal-900/40 relative z-10">
+          ⌨️ Type to catch the letters!
         </div>
       )}
 
       {/* Start Screen */}
       {gameState === 'start' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 backdrop-blur-sm z-50">
-          <div
-            className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-1"
-            style={{ textShadow: '0 0 40px rgba(56,189,248,0.5)' }}
-          >
-            LETTER RAIN
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-teal-950/90 backdrop-blur-sm z-50">
+          <div className="text-3xl mb-1">🐠</div>
+          <div className="text-2xl font-black text-teal-100 mb-1 tracking-tight">
+            DEEP TYPE
           </div>
-          <p className="text-[10px] text-cyan-300/80 mb-3">Type falling letters to survive!</p>
+          <p className="text-[11px] text-teal-300/70 mb-4">Catch sinking letters before they hit the ocean floor!</p>
 
-          <div className="text-[9px] text-slate-400 mb-4 space-y-1.5 text-center px-6">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-cyan-400" style={{ textShadow: '0 0 8px #38bdf8' }}>A</span>
-              <span className="text-slate-500">Normal = 1pt</span>
+          <div className="text-[10px] text-teal-200/80 mb-5 space-y-2 text-center px-6">
+            <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
+              <span className="w-7 h-7 rounded-lg bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-200 font-bold">A</span>
+              <span className="text-teal-300/60">Normal = 1pt</span>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-yellow-400 animate-pulse" style={{ textShadow: '0 0 8px #fbbf24' }}>G</span>
-              <span className="text-slate-500">Golden = 3pts</span>
+            <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
+              <span className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-bold animate-pulse">G</span>
+              <span className="text-teal-300/60">Golden = 3pts</span>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <span>💣</span>
-              <span className="text-red-400">Bomb = Game Over!</span>
+            <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
+              <span className="text-base">🦔</span>
+              <span className="text-rose-300/80">Sea Urchin = Game Over!</span>
             </div>
           </div>
 
-          <div className="text-[8px] text-slate-500 mb-4 text-center">
-            🎯 Build combos for multipliers!<br/>
-            ⚡ Speed increases as you score
+          <div className="text-[9px] text-teal-400/50 mb-5 text-center">
+            🌊 Build combos for multipliers!<br/>
+            🐙 Current gets stronger as you dive deeper
           </div>
 
           <button
             onClick={startGame}
-            className="px-8 py-2.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full text-white font-bold text-sm hover:scale-105 active:scale-95 transition-transform"
-            style={{
-              boxShadow: '0 0 30px rgba(56,189,248,0.4), 0 0 60px rgba(139,92,246,0.2)',
-            }}
+            className="px-8 py-3 bg-teal-600 hover:bg-teal-500 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border border-teal-400/30"
           >
-            START GAME
+            🫧 DIVE IN
           </button>
 
           {highScore > 0 && (
-            <p className="text-[9px] text-slate-500 mt-3">
-              🏆 High Score: <span className="text-yellow-400">{highScore}</span>
+            <p className="text-[10px] text-teal-400/60 mt-4">
+              🏆 High Score: <span className="text-amber-300">{highScore}</span>
             </p>
           )}
         </div>
@@ -529,50 +590,39 @@ const GameSandbox: FC = () => {
 
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm z-50">
-          <div
-            className="text-xl font-black text-red-400 mb-2"
-            style={{ textShadow: '0 0 20px rgba(239,68,68,0.6)' }}
-          >
-            GAME OVER
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-teal-950/95 backdrop-blur-sm z-50">
+          <div className="text-3xl mb-2">🌊</div>
+          <div className="text-xl font-black text-rose-300 mb-3">
+            SURFACED!
           </div>
 
-          <div className="text-4xl font-black text-white mb-1" style={{ textShadow: '0 0 15px rgba(255,255,255,0.3)' }}>
+          <div className="text-4xl font-black text-white mb-1">
             {score}
           </div>
-          <p className="text-[10px] text-slate-400 mb-2">POINTS</p>
+          <p className="text-[11px] text-teal-300/60 mb-3">POINTS</p>
 
           {score >= highScore && score > 0 && (
-            <div
-              className="text-xs font-bold text-yellow-400 mb-3 px-3 py-1 rounded-full animate-pulse"
-              style={{
-                background: 'rgba(251,191,36,0.1)',
-                border: '1px solid rgba(251,191,36,0.3)',
-              }}
-            >
-              🎉 NEW HIGH SCORE!
+            <div className="text-xs font-bold text-amber-300 mb-4 px-4 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/20 animate-pulse">
+              🐠 NEW RECORD!
             </div>
           )}
 
           {score < highScore && (
-            <p className="text-[9px] text-slate-500 mb-3">
-              Best: <span className="text-yellow-400">{highScore}</span>
+            <p className="text-[10px] text-teal-400/60 mb-4">
+              Best: <span className="text-amber-300">{highScore}</span>
             </p>
           )}
 
           {/* Stats */}
-          <div className="text-[9px] text-slate-500 mb-4 text-center">
-            Level reached: {difficulty + 1}
+          <div className="text-[10px] text-teal-300/50 mb-5 text-center">
+            Maximum depth: {difficulty + 1}
           </div>
 
           <button
             onClick={startGame}
-            className="px-8 py-2.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 rounded-full text-white font-bold text-sm hover:scale-105 active:scale-95 transition-transform"
-            style={{
-              boxShadow: '0 0 30px rgba(56,189,248,0.4), 0 0 60px rgba(139,92,246,0.2)',
-            }}
+            className="px-8 py-3 bg-teal-600 hover:bg-teal-500 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border border-teal-400/30"
           >
-            PLAY AGAIN
+            🫧 DIVE AGAIN
           </button>
         </div>
       )}
@@ -581,7 +631,7 @@ const GameSandbox: FC = () => {
       {gameState === 'playing' && (
         <button
           onClick={startGame}
-          className="absolute top-0.5 right-1 text-slate-500 hover:text-white transition-colors text-sm opacity-50 hover:opacity-100"
+          className="absolute top-1.5 right-2 text-teal-300/40 hover:text-teal-100 transition-colors text-sm"
           title="Restart"
         >
           ↺
