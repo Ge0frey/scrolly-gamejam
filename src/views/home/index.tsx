@@ -647,14 +647,17 @@ const GameSandbox: FC = () => {
 
         <div className="flex items-center gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
+            <span
               key={`life-${i}`}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${
+              className={`text-sm transition-all duration-200 ${
                 i < lives 
-                  ? 'bg-rose-500 border border-rose-300/70 shadow-lg shadow-rose-500/50' 
-                  : 'bg-teal-900/60 border border-teal-800/50'
+                  ? 'opacity-100 drop-shadow-lg' 
+                  : 'opacity-30 grayscale'
               }`}
-            />
+              style={{ filter: i < lives ? 'drop-shadow(0 0 4px rgba(239, 68, 68, 0.6))' : 'none' }}
+            >
+              ❤️
+            </span>
           ))}
         </div>
       </div>
