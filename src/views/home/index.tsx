@@ -95,6 +95,13 @@ const seaweedData = [
   { id: 'sw-6', pos: 88 },
 ];
 
+// Virtual keyboard layout - 3 rows like a QWERTY keyboard
+const keyboardRows = [
+  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'P'],
+  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+];
+
 const GameSandbox: FC = () => {
   // Game states
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
@@ -212,12 +219,10 @@ const GameSandbox: FC = () => {
     return () => clearInterval(gameLoop);
   }, [gameState, powerUp]);
 
-  // Keyboard input handler
-  const handleKeyPress = useCallback(
-    (e: KeyboardEvent) => {
+  // Letter input handler - works for both keyboard and touch
+  const handleLetterInput = useCallback(
+    (typed: string) => {
       if (gameState !== 'playing') return;
-
-      const typed = e.key.toUpperCase();
       if (!/^[A-Z]$/.test(typed)) return;
 
       setFallingLetters((prev) => {
@@ -277,6 +282,14 @@ const GameSandbox: FC = () => {
       });
     },
     [gameState, combo]
+  );
+
+  // Keyboard input handler (wraps handleLetterInput)
+  const handleKeyPress = useCallback(
+    (e: KeyboardEvent) => {
+      handleLetterInput(e.key.toUpperCase());
+    },
+    [handleLetterInput]
   );
 
   // Attach keyboard listener
@@ -537,10 +550,31 @@ const GameSandbox: FC = () => {
         </div>
       )}
 
-      {/* Keyboard hint */}
+      {/* Virtual keyboard - always visible */}
       {gameState === 'playing' && (
-        <div className="text-center text-[10px] text-teal-200/60 py-1.5 bg-teal-900/40 relative z-10">
-          ⌨️ Type to catch the letters!
+        <div className="bg-teal-900/60 backdrop-blur-sm px-1 py-1.5 relative z-10">
+          <div className="flex flex-col gap-1 items-center">
+            {keyboardRows.map((row, rowIndex) => (
+              <div key={`kb-row-${rowIndex}`} className="flex gap-0.5 justify-center">
+                {row.map((letter) => (
+                  <button
+                    key={`kb-${letter}`}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      handleLetterInput(letter);
+                    }}
+                    onClick={() => handleLetterInput(letter)}
+                    className="w-8 h-9 rounded-lg bg-teal-700/50 border border-teal-500/30 text-teal-100 font-bold text-sm
+                      active:bg-teal-500/60 active:scale-95 transition-all duration-75
+                      hover:bg-teal-600/50 select-none touch-manipulation"
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    {letter}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -551,7 +585,9 @@ const GameSandbox: FC = () => {
           <div className="text-2xl font-black text-teal-100 mb-1 tracking-tight">
             DEEP TYPE
           </div>
-          <p className="text-[11px] text-teal-300/70 mb-4">Catch sinking letters before they hit the ocean floor!</p>
+          <p className="text-[11px] text-teal-300/70 mb-4">
+            Tap or type letters before they hit the ocean floor!
+          </p>
 
           <div className="text-[10px] text-teal-200/80 mb-5 space-y-2 text-center px-6">
             <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
