@@ -181,6 +181,7 @@ const GameSandbox: FC = () => {
   const [screenShake, setScreenShake] = useState(false);
   const [screenFlash, setScreenFlash] = useState<'none' | 'success' | 'fail' | 'golden'>('none');
   const [timeLeft, setTimeLeft] = useState(30);
+  const [didWin, setDidWin] = useState(false);
 
   // Game duration constant
   const GAME_DURATION = 30;
@@ -221,6 +222,7 @@ const GameSandbox: FC = () => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
+          setDidWin(true); // Survived the full 30 seconds = WIN!
           setGameState('gameover');
           return 0;
         }
@@ -334,6 +336,7 @@ const GameSandbox: FC = () => {
           setLives((l) => {
             const newLives = l - 1;
             if (newLives <= 0) {
+              setDidWin(false); // Lost all lives = LOSE
               setTimeout(() => setGameState('gameover'), 100);
             }
             return Math.max(0, newLives);
@@ -379,6 +382,7 @@ const GameSandbox: FC = () => {
           playSound('bomb');
           setTimeout(() => {
             setLives(0);
+            setDidWin(false); // Hit a bomb = LOSE
             setGameState('gameover');
             setScreenShake(false);
             setScreenFlash('none');
@@ -534,6 +538,7 @@ const GameSandbox: FC = () => {
     setLives(5);
     setCombo(0);
     setTimeLeft(GAME_DURATION);
+    setDidWin(false);
     setFallingLetters([]);
     setParticles([]);
     setPowerUp('none');
@@ -893,10 +898,16 @@ const GameSandbox: FC = () => {
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-teal-950/95 backdrop-blur-sm z-50">
-          <div className="text-3xl mb-2 drop-shadow-lg">{timeLeft === 0 ? '⏱️' : '🌊'}</div>
-          <div className="text-xl font-black text-rose-400 mb-3 drop-shadow-lg">
-            {timeLeft === 0 ? "TIME'S UP!" : 'SURFACED!'}
+          <div className="text-4xl mb-2 drop-shadow-lg">{didWin ? '🏆' : '🌊'}</div>
+          <div className={`text-xl font-black mb-3 drop-shadow-lg ${didWin ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {didWin ? 'YOU WIN!' : 'GAME OVER'}
           </div>
+          {!didWin && (
+            <p className="text-[11px] text-rose-300 mb-2 drop-shadow">YOU LOST</p>
+          )}
+          {didWin && (
+            <p className="text-[11px] text-emerald-300 mb-2 drop-shadow">You survived 30 seconds!</p>
+          )}
 
           <div className="text-4xl font-black text-white mb-1 drop-shadow-lg">
             {score}
@@ -917,9 +928,13 @@ const GameSandbox: FC = () => {
 
           <button
             onClick={startGame}
-            className="px-8 py-3 bg-teal-600 hover:bg-teal-500 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border border-teal-300/50 shadow-xl shadow-teal-600/50"
+            className={`px-8 py-3 rounded-2xl text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 border shadow-xl ${
+              didWin 
+                ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-300/50 shadow-emerald-600/50' 
+                : 'bg-teal-600 hover:bg-teal-500 border-teal-300/50 shadow-teal-600/50'
+            }`}
           >
-            🫧 DIVE AGAIN
+            🫧 {didWin ? 'PLAY AGAIN' : 'TRY AGAIN'}
           </button>
         </div>
       )}
