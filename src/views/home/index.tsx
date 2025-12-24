@@ -65,7 +65,12 @@ interface Particle {
   id: string;
   x: number;
   y: number;
+  vx: number;
+  vy: number;
   color: string;
+  size: number;
+  life: number;
+  type: 'sparkle' | 'bubble' | 'ring';
 }
 
 interface Bubble {
@@ -102,6 +107,66 @@ const keyboardRows = [
   ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
 ];
 
+// Simple audio context for sound effects
+const playSound = (type: 'pop' | 'golden' | 'miss' | 'bomb' | 'combo') => {
+  try {
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    switch (type) {
+      case 'pop':
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.1);
+        break;
+      case 'golden':
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.2);
+        break;
+      case 'miss':
+        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.15);
+        break;
+      case 'bomb':
+        oscillator.type = 'sawtooth';
+        oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.3);
+        break;
+      case 'combo':
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(500, audioContext.currentTime + 0.05);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.15);
+        break;
+    }
+  } catch {
+    // Audio not available
+  }
+};
+
 const GameSandbox: FC = () => {
   // Game states
   const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
@@ -114,6 +179,7 @@ const GameSandbox: FC = () => {
   const [lastTyped, setLastTyped] = useState<{ letter: string; correct: boolean } | null>(null);
   const [powerUp, setPowerUp] = useState<'none' | 'slow' | 'shield'>('none');
   const [screenShake, setScreenShake] = useState(false);
+  const [screenFlash, setScreenFlash] = useState<'none' | 'success' | 'fail' | 'golden'>('none');
 
   // Calculate difficulty based on score
   const difficulty = Math.min(Math.floor(score / 10), 15);
@@ -231,6 +297,9 @@ const GameSandbox: FC = () => {
         if (matchingLetters.length === 0) {
           setLastTyped({ letter: typed, correct: false });
           setCombo(0);
+          setScreenFlash('fail');
+          playSound('miss');
+          setTimeout(() => setScreenFlash('none'), 150);
           setTimeout(() => setLastTyped(null), 250);
           return prev;
         }
@@ -241,11 +310,14 @@ const GameSandbox: FC = () => {
         // Handle bomb - instant game over!
         if (target.type === 'bomb') {
           setScreenShake(true);
+          setScreenFlash('fail');
+          playSound('bomb');
           setTimeout(() => {
             setLives(0);
             setGameState('gameover');
             setScreenShake(false);
-          }, 200);
+            setScreenFlash('none');
+          }, 300);
           return prev;
         }
 
@@ -255,25 +327,75 @@ const GameSandbox: FC = () => {
         setScore((s) => s + basePoints * comboMultiplier);
         setCombo((c) => c + 1);
 
-        // Create bubble pop particles
+        // Play sound effect
+        if (target.type === 'golden') {
+          playSound('golden');
+          setScreenFlash('golden');
+        } else {
+          playSound('pop');
+          setScreenFlash('success');
+        }
+        setTimeout(() => setScreenFlash('none'), 100);
+
+        // Play combo sound for high combos
+        if (combo > 0 && combo % 3 === 2) {
+          setTimeout(() => playSound('combo'), 50);
+        }
+
+        // Create explosion particles with physics
         const particleColors =
           target.type === 'golden'
-            ? ['#fcd34d', '#fde68a', '#fef3c7']
-            : ['#99f6e4', '#5eead4', '#2dd4bf'];
+            ? ['#fcd34d', '#fde68a', '#fef3c7', '#fbbf24']
+            : ['#99f6e4', '#5eead4', '#2dd4bf', '#14b8a6'];
 
         const particleTimestamp = Date.now();
         const particleRandom = Math.random().toString(36).substring(2, 9);
-        const newParticles: Particle[] = Array.from({ length: 6 }, (_, i) => ({
-          id: `particle-${particleTimestamp}-${particleRandom}-${i}`,
-          x: target.x + (Math.random() - 0.5) * 10,
-          y: target.y + (Math.random() - 0.5) * 10,
-          color: particleColors[Math.floor(Math.random() * particleColors.length)],
+        
+        // Create multiple types of particles for richer effect
+        const sparkles: Particle[] = Array.from({ length: 8 }, (_, i) => {
+          const angle = (i / 8) * Math.PI * 2;
+          const speed = 2 + Math.random() * 3;
+          return {
+            id: `sparkle-${particleTimestamp}-${particleRandom}-${i}`,
+            x: target.x,
+            y: target.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            color: particleColors[Math.floor(Math.random() * particleColors.length)],
+            size: 4 + Math.random() * 4,
+            life: 1,
+            type: 'sparkle' as const,
+          };
+        });
+
+        // Add ring effect for golden letters
+        const rings: Particle[] = target.type === 'golden' ? [{
+          id: `ring-${particleTimestamp}-${particleRandom}`,
+          x: target.x,
+          y: target.y,
+          vx: 0,
+          vy: 0,
+          color: '#fbbf24',
+          size: 10,
+          life: 1,
+          type: 'ring' as const,
+        }] : [];
+
+        // Add rising bubbles
+        const bubbles: Particle[] = Array.from({ length: 3 }, (_, i) => ({
+          id: `bubble-pop-${particleTimestamp}-${particleRandom}-${i}`,
+          x: target.x + (Math.random() - 0.5) * 15,
+          y: target.y,
+          vx: (Math.random() - 0.5) * 1,
+          vy: -1 - Math.random() * 2,
+          color: 'rgba(255,255,255,0.6)',
+          size: 3 + Math.random() * 4,
+          life: 1,
+          type: 'bubble' as const,
         }));
 
+        const newParticles = [...sparkles, ...rings, ...bubbles];
         setParticles((p) => [...p, ...newParticles]);
-        setTimeout(() => {
-          setParticles((p) => p.filter((particle) => !newParticles.find((np) => np.id === particle.id)));
-        }, 400);
 
         setLastTyped({ letter: typed, correct: true });
         setTimeout(() => setLastTyped(null), 200);
@@ -319,13 +441,27 @@ const GameSandbox: FC = () => {
     return () => clearInterval(interval);
   }, [gameState, powerUp]);
 
-  // Clear particles periodically
+  // Particle physics update loop
   useEffect(() => {
-    const cleanup = setInterval(() => {
-      setParticles((p) => p.slice(-20));
-    }, 2000);
-    return () => clearInterval(cleanup);
-  }, []);
+    if (gameState !== 'playing') return;
+    
+    const updateParticles = setInterval(() => {
+      setParticles((prev) => {
+        return prev
+          .map((p) => ({
+            ...p,
+            x: p.x + p.vx * 0.5,
+            y: p.y + p.vy * 0.5,
+            vy: p.type === 'bubble' ? p.vy : p.vy + 0.1, // gravity for non-bubbles
+            life: p.life - 0.05,
+            size: p.type === 'ring' ? p.size + 2 : p.size * 0.95,
+          }))
+          .filter((p) => p.life > 0 && p.size > 0.5);
+      });
+    }, 30);
+
+    return () => clearInterval(updateParticles);
+  }, [gameState]);
 
   const startGame = () => {
     setGameState('playing');
@@ -355,10 +491,24 @@ const GameSandbox: FC = () => {
     <div
       className={`relative w-full h-full flex flex-col overflow-hidden select-none`}
       style={{
-        transform: screenShake ? `translate(${Math.random() * 4 - 2}px, ${Math.random() * 4 - 2}px)` : 'none',
+        transform: screenShake ? `translate(${Math.random() * 6 - 3}px, ${Math.random() * 6 - 3}px) rotate(${Math.random() * 2 - 1}deg)` : 'none',
         background: 'linear-gradient(180deg, #083344 0%, #0f4c5c 30%, #0d9488 70%, #115e59 100%)',
+        transition: screenShake ? 'none' : 'transform 0.1s ease-out',
       }}
     >
+      {/* Screen flash overlay */}
+      {screenFlash !== 'none' && (
+        <div
+          className="absolute inset-0 pointer-events-none z-40 transition-opacity duration-100"
+          style={{
+            backgroundColor: 
+              screenFlash === 'success' ? 'rgba(45, 212, 191, 0.2)' :
+              screenFlash === 'golden' ? 'rgba(251, 191, 36, 0.3)' :
+              screenFlash === 'fail' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
+          }}
+        />
+      )}
+
       {/* Underwater ambient - light rays from surface */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[0, 1, 2].map((i) => (
@@ -459,19 +609,61 @@ const GameSandbox: FC = () => {
 
       {/* Game Area */}
       <div className="relative flex-1 overflow-hidden">
-        {/* Particles (bubble pops) */}
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="absolute w-2 h-2 rounded-full animate-ping"
-            style={{
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              backgroundColor: p.color,
-              opacity: 0.7,
-            }}
-          />
-        ))}
+        {/* Particles with different effects */}
+        {particles.map((p) => {
+          if (p.type === 'ring') {
+            return (
+              <div
+                key={p.id}
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  width: `${p.size}px`,
+                  height: `${p.size}px`,
+                  transform: 'translate(-50%, -50%)',
+                  border: `2px solid ${p.color}`,
+                  opacity: p.life,
+                }}
+              />
+            );
+          }
+          if (p.type === 'bubble') {
+            return (
+              <div
+                key={p.id}
+                className="absolute rounded-full pointer-events-none"
+                style={{
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  width: `${p.size}px`,
+                  height: `${p.size}px`,
+                  transform: 'translate(-50%, -50%)',
+                  backgroundColor: p.color,
+                  opacity: p.life * 0.6,
+                  border: '1px solid rgba(255,255,255,0.3)',
+                }}
+              />
+            );
+          }
+          // Sparkle particle
+          return (
+            <div
+              key={p.id}
+              className="absolute rounded-full pointer-events-none"
+              style={{
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: p.color,
+                opacity: p.life,
+                boxShadow: `0 0 ${p.size}px ${p.color}`,
+              }}
+            />
+          );
+        })}
 
         {/* Falling letters (like sinking objects) */}
         {fallingLetters.map((letter) => {
