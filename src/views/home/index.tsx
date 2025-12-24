@@ -183,7 +183,7 @@ const GameSandbox: FC = () => {
 
   // Calculate difficulty based on score
   const difficulty = Math.min(Math.floor(score / 10), 15);
-  const baseFallSpeed = Math.max(0.8, 2.5 - difficulty * 0.1);
+  const baseFallSpeed = Math.max(1.5, 3.0 - difficulty * 0.15);
   const spawnRate = Math.max(700, 1800 - difficulty * 70);
 
   // Load high score from localStorage
