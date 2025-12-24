@@ -552,7 +552,7 @@ const GameSandbox: FC = () => {
 
       {/* Virtual keyboard - always visible */}
       {gameState === 'playing' && (
-        <div className="bg-teal-900/60 backdrop-blur-sm px-1 py-1.5 relative z-10">
+        <div className="bg-teal-900/60 backdrop-blur-sm px-1 pb-4 pt-3 relative z-10 rounded-t-xl">
           <div className="flex flex-col gap-1 items-center">
             {keyboardRows.map((row, rowIndex) => (
               <div key={`kb-row-${rowIndex}`} className="flex gap-0.5 justify-center">
@@ -591,21 +591,21 @@ const GameSandbox: FC = () => {
 
           <div className="text-[10px] text-teal-200/80 mb-5 space-y-2 text-center px-6">
             <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
-              <span className="w-7 h-7 rounded-lg bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-200 font-bold">A</span>
-              <span className="text-teal-300/60">Normal = 1pt</span>
+              <span className="w-7 h-7 rounded-lg bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-100 font-bold">A</span>
+              <span className="text-teal-100">Normal = 1pt</span>
             </div>
             <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
-              <span className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 font-bold animate-pulse">G</span>
-              <span className="text-teal-300/60">Golden = 3pts</span>
+              <span className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-200 font-bold animate-pulse">G</span>
+              <span className="text-amber-200">Golden = 3pts</span>
             </div>
             <div className="flex items-center justify-center gap-3 bg-teal-800/30 rounded-lg px-4 py-2">
               <span className="text-base">🦔</span>
-              <span className="text-rose-300/80">Sea Urchin = Game Over!</span>
+              <span className="text-rose-200">Sea Urchin = Game Over!</span>
             </div>
           </div>
 
-          <div className="text-[9px] text-teal-400/50 mb-5 text-center">
-            🌊 Build combos for multipliers!<br/>
+          <div className="text-xs text-teal-300 mb-5 text-center">
+          🌊 Build combos for multipliers!<br/>
             🐙 Current gets stronger as you dive deeper
           </div>
 
@@ -617,7 +617,7 @@ const GameSandbox: FC = () => {
           </button>
 
           {highScore > 0 && (
-            <p className="text-[10px] text-teal-400/60 mt-4">
+            <p className="text-[10px]  mt-4">
               🏆 High Score: <span className="text-amber-300">{highScore}</span>
             </p>
           )}
