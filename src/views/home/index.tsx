@@ -1,5 +1,5 @@
 // Next, React
-import { FC, useState, useEffect, useCallback } from 'react';
+import { FC, useState, useEffect, useCallback, useRef } from 'react';
 import pkg from '../../../package.json';
 
 // ❌ DO NOT EDIT ANYTHING ABOVE THIS LINE
@@ -180,11 +180,17 @@ const GameSandbox: FC = () => {
   const [powerUp, setPowerUp] = useState<'none' | 'slow' | 'shield'>('none');
   const [screenShake, setScreenShake] = useState(false);
   const [screenFlash, setScreenFlash] = useState<'none' | 'success' | 'fail' | 'golden'>('none');
+  const [timeLeft, setTimeLeft] = useState(30);
 
-  // Calculate difficulty based on score
-  const difficulty = Math.min(Math.floor(score / 10), 15);
-  const baseFallSpeed = Math.max(1.5, 3.0 - difficulty * 0.15);
-  const spawnRate = Math.max(700, 1800 - difficulty * 70);
+  // Game duration constant
+  const GAME_DURATION = 30;
+
+  // Calculate difficulty based on time elapsed (0-30 seconds maps to difficulty 0-15)
+  const timeElapsed = GAME_DURATION - timeLeft;
+  const difficulty = Math.min(Math.floor(timeElapsed / 2), 15);
+  // Speed increases as time runs out: starts slow, ends fast
+  const baseFallSpeed = 1.5 + (timeElapsed / GAME_DURATION) * 3.0; // 1.5 to 4.5
+  const spawnRate = Math.max(400, 1500 - timeElapsed * 40); // 1500ms down to 400ms
 
   // Load high score from localStorage
   useEffect(() => {
@@ -208,39 +214,98 @@ const GameSandbox: FC = () => {
     }
   }, [score, highScore]);
 
-  // Spawn new letters
+  // Countdown timer
   useEffect(() => {
     if (gameState !== 'playing') return;
 
-    const spawnLetter = () => {
-      const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Removed I and O to avoid confusion
-      const randomLetter = letters[Math.floor(Math.random() * letters.length)];
-      const x = 10 + Math.random() * 80;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setGameState('gameover');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-      // Determine letter type
-      let type: 'normal' | 'golden' | 'bomb' = 'normal';
-      const rand = Math.random();
-      if (score > 5 && rand > 0.97) type = 'bomb';
-      else if (rand > 0.88) type = 'golden';
+    return () => clearInterval(timer);
+  }, [gameState]);
 
-      const speedMultiplier = powerUp === 'slow' ? 0.4 : 1;
+  // Refs for spawn timing (to avoid interval reset issues)
+  const lastSpawnTimeRef = useRef(0);
+  const gameStateRef = useRef(gameState);
+  const timeLeftRef = useRef(timeLeft);
+  const powerUpRef = useRef(powerUp);
+  const scoreRef = useRef(score);
 
-      setFallingLetters((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          letter: randomLetter,
-          x,
-          y: -5,
-          speed: baseFallSpeed * speedMultiplier * (0.8 + Math.random() * 0.4),
-          type,
-        },
-      ]);
+  // Keep refs in sync
+  useEffect(() => {
+    gameStateRef.current = gameState;
+    timeLeftRef.current = timeLeft;
+    powerUpRef.current = powerUp;
+    scoreRef.current = score;
+  }, [gameState, timeLeft, powerUp, score]);
+
+  // Spawn new letters using fixed interval with dynamic timing
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+
+    // Reset spawn time when game starts
+    lastSpawnTimeRef.current = Date.now();
+
+    const checkAndSpawn = () => {
+      if (gameStateRef.current !== 'playing') return;
+
+      const now = Date.now();
+      const elapsed = GAME_DURATION - timeLeftRef.current;
+      // Calculate current spawn rate based on time elapsed
+      const currentSpawnRate = Math.max(400, 1200 - elapsed * 30); // 1200ms down to 400ms
+      
+      if (now - lastSpawnTimeRef.current >= currentSpawnRate) {
+        lastSpawnTimeRef.current = now;
+
+        const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+        const x = 10 + Math.random() * 80;
+
+        let type: 'normal' | 'golden' | 'bomb' = 'normal';
+        const rand = Math.random();
+        if (scoreRef.current > 5 && rand > 0.97) type = 'bomb';
+        else if (rand > 0.88) type = 'golden';
+
+        const speedMultiplier = powerUpRef.current === 'slow' ? 0.4 : 1;
+        const currentFallSpeed = 1.5 + (elapsed / GAME_DURATION) * 3.0;
+
+        setFallingLetters((prev) => [
+          ...prev,
+          {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            letter: randomLetter,
+            x,
+            y: -5,
+            speed: currentFallSpeed * speedMultiplier * (0.8 + Math.random() * 0.4),
+            type,
+          },
+        ]);
+      }
     };
 
-    const interval = setInterval(spawnLetter, spawnRate);
+    // Spawn first letter immediately
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+    setFallingLetters([{
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      letter: randomLetter,
+      x: 10 + Math.random() * 80,
+      y: -5,
+      speed: 1.5 * (0.8 + Math.random() * 0.4),
+      type: 'normal',
+    }]);
+
+    // Check frequently but spawn based on dynamic rate
+    const interval = setInterval(checkAndSpawn, 100);
     return () => clearInterval(interval);
-  }, [gameState, spawnRate, baseFallSpeed, powerUp, score]);
+  }, [gameState]);
 
   // Game loop - update letter positions
   useEffect(() => {
@@ -468,6 +533,7 @@ const GameSandbox: FC = () => {
     setScore(0);
     setLives(5);
     setCombo(0);
+    setTimeLeft(GAME_DURATION);
     setFallingLetters([]);
     setParticles([]);
     setPowerUp('none');
@@ -601,10 +667,16 @@ const GameSandbox: FC = () => {
         </div>
       )}
 
-      {/* Depth indicator */}
-      {gameState === 'playing' && difficulty > 0 && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[9px] text-teal-400/50 font-medium">
-          Depth {difficulty + 1}
+      {/* Timer countdown */}
+      {gameState === 'playing' && (
+        <div className={`absolute top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full font-bold z-20 border shadow-lg ${
+          timeLeft <= 5 
+            ? 'bg-rose-600/60 text-rose-100 border-rose-300/60 animate-pulse' 
+            : timeLeft <= 10 
+              ? 'bg-amber-600/50 text-amber-100 border-amber-300/60' 
+              : 'bg-teal-700/50 text-teal-100 border-teal-300/50'
+        }`}>
+          <span className="text-sm">⏱️ {timeLeft}s</span>
         </div>
       )}
 
@@ -799,8 +871,8 @@ const GameSandbox: FC = () => {
           </div>
 
           <div className="text-xs text-teal-100 mb-5 text-center drop-shadow">
-          🌊 Build combos for multipliers!<br/>
-            🐙 Current gets stronger as you dive deeper
+            ⏱️ 30 seconds to score as much as you can!<br/>
+            🌊 Speed increases as time runs out!
           </div>
 
           <button
@@ -821,9 +893,9 @@ const GameSandbox: FC = () => {
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-teal-950/95 backdrop-blur-sm z-50">
-          <div className="text-3xl mb-2 drop-shadow-lg">🌊</div>
+          <div className="text-3xl mb-2 drop-shadow-lg">{timeLeft === 0 ? '⏱️' : '🌊'}</div>
           <div className="text-xl font-black text-rose-400 mb-3 drop-shadow-lg">
-            SURFACED!
+            {timeLeft === 0 ? "TIME'S UP!" : 'SURFACED!'}
           </div>
 
           <div className="text-4xl font-black text-white mb-1 drop-shadow-lg">
@@ -842,11 +914,6 @@ const GameSandbox: FC = () => {
               Best: <span className="text-amber-300 font-bold">{highScore}</span>
             </p>
           )}
-
-          {/* Stats */}
-          <div className="text-[10px] text-teal-200 mb-5 text-center drop-shadow">
-            Maximum depth: {difficulty + 1}
-          </div>
 
           <button
             onClick={startGame}
