@@ -1,3 +1,5 @@
+## Link: https://deeptypeworld.vercel.app/
+
 #  Deep Type
 
 An underwater typing game where you race against time to type falling letters before they hit the ocean floor!
